@@ -1,7 +1,5 @@
 # LoFTR-MedicalData
-git the original [LoFTR](https://github.com/zju3dv/LoFTR#readme)  
-Replace their "LoFTR/demo/" folder with mine  
-Change which check point is used for the test in 'run_demo.sh'  
-  
+Compare to the author's original work： [LoFTR](https://github.com/zju3dv/LoFTR#readme)  
+Use the 'create_homo_data/Process_data.py' to process each frame to get the folder 'xx_processed'
 After adding soft links:
 ![demo_vid](assets/soft-links.PNG)  
