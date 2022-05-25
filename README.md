@@ -19,7 +19,7 @@ After adding soft links:
 # Test checkpoint
 ### Input video to test  
 Change the `input` and `model_ckpt` of the `run_demo.sh`.  
-![demo]()
+![demo](assets/run_demo.PNG)
 After that:  
 ```shell
 cd demo/
