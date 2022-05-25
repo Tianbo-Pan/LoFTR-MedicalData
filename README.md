@@ -27,3 +27,7 @@ cd demo/
 ```
 
 ### Input image pairs to test  
+Change the `img0_pth` and `img1_pth` to the path of the image pair to be aligned  in the `ptb_colab2.py`
+```shell
+python ptb_colab2.py
+```
