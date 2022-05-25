@@ -15,6 +15,7 @@ import torch
 import numpy as np
 import matplotlib.cm as cm
 import pickle
+import random
 
 os.sys.path.append("../")  # Add the project directory
 from src.loftr import LoFTR, default_cfg
@@ -26,13 +27,6 @@ try:
 except:
     raise ImportError("This demo requires utils.py from SuperGlue, please use run_demo.sh to start this script.")
 
-def abc(x):
-    a = keyboard.KeyboardEvent('down', 28, 'q')
-    #按键事件a为按下enter键，第二个参数如果不知道每个按键的值就随便写，
-    #如果想知道按键的值可以用hook绑定所有事件后，输出x.scan_code即可
-    if x.event_type == 'down' and x.name == a.name:
-        return True
-    #当监听的事件为enter键，且是按下的时候
 
 def on_press(key):
     if key == Key.esc:
@@ -102,6 +96,7 @@ if __name__ == '__main__':
         '--bottom_k', type=int, default=0, help="The min vis_range (please refer to the code).")
 
     opt = parser.parse_args()
+    print(opt.input)
     print(opt.weight)
     print(front_matter)
     parser.print_help()
@@ -131,7 +126,8 @@ if __name__ == '__main__':
     # Configure I/O
     if not opt.save_video:
         print('Writing video to loftr-matches.mp4...')
-        writer = cv2.VideoWriter('loftr-matches.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, (703*2 + 10, 703))
+        #use the frame's width and height to set the '(width*2 + 10, height)'
+        writer = cv2.VideoWriter('loftr-matches.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, (480*2 + 10, 480))
     if opt.save_input:
         print('Writing video to demo-input.mp4...')
         input_writer = cv2.VideoWriter('demo-input.mp4', cv2.VideoWriter_fourcc(*'mp4v'), 15, (640, 480))
@@ -211,6 +207,12 @@ if __name__ == '__main__':
         mkpts0 = last_data['mkpts0_f'].cpu().numpy()[vis_range[0]:vis_range[1]]
         mkpts1 = last_data['mkpts1_f'].cpu().numpy()[vis_range[0]:vis_range[1]]
         mconf = last_data['mconf'].cpu().numpy()[vis_range[0]:vis_range[1]]
+        num = len(mkpts0)
+        index_num = 100
+        index = [random.randint(0, num - 1) for _ in range(index_num)]
+        mkpts0_t = np.array(list(zip(mkpts0[index]))).reshape(index_num,2)
+        mkpts1_t = np.array(list(zip(mkpts1[index]))).reshape(index_num,2)
+        mconf_t = np.array(list(zip(mconf[index]))).reshape(index_num,1)
         #pdb.set_trace()
         # Normalize confidence.
         if len(mconf) > 0:
@@ -233,7 +235,7 @@ if __name__ == '__main__':
             'Image Pair: {:06}:{:06}'.format(stem0, stem1),
         ]
         out = make_matching_plot_fast(
-            last_frame, frame, mkpts0, mkpts1, mkpts0, mkpts1, color, text,
+            last_frame, frame, mkpts0_t, mkpts1_t, mkpts0_t, mkpts1_t, color, text,
             path=None, show_keypoints=False, small_text=small_text)
         # Save high quality png, optionally with dynamic alpha support (unreleased yet).
         # save_path = 'demo_vid/{:06}'.format(frame_id)
@@ -241,8 +243,8 @@ if __name__ == '__main__':
         #     last_frame, frame, mkpts0, mkpts1, mkpts0, mkpts1, color, text,
         #     path=save_path, show_keypoints=opt.show_keypoints, small_text=small_text)
         frame_num = 'frame_{:06}'.format(stem0)
-        croped_path = str(Path('/data/pantianbo/LoFTR/demo/Croped_Image', frame_num + '.png'))
-        #cv2.imwrite(croped_path, last_frame)
+        croped_path = str(Path('/data/pantianbo/ptb_LoFTR/demo/Croped_Image', frame_num + '.png'))
+        cv2.imwrite(croped_path, last_frame)
         last_data['image0'] = frame_tensor
         last_frame = frame
         last_image_id = (vs.i - 1)
