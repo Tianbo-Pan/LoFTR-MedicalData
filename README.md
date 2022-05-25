@@ -16,3 +16,14 @@ After adding soft links:
 :triangular_flag_on_post: val_homo is also treated in the same way. Shown below:
 ![intrinsic](assets/val_intrinsic.PNG)
 ### The checkpoints you trained are in `logs/`
+# Test checkpoint
+### Input video to test  
+Change the `input` and `model_ckpt` of the `run_demo.sh`.  
+![demo]()
+After that:  
+```shell
+cd demo/
+./run_demo.sh
+```
+
+### Input image pairs to test  
