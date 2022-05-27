@@ -1,6 +1,9 @@
 # LoFTR-MedicalData
 Compare to the author's original work： [LoFTR](https://github.com/zju3dv/LoFTR#readme)  
-Make `weights` folder  
+Make `weights/` folder using:
+```shell
+mkdir weights
+```
 Download the provided ckpts in the [download link](https://drive.google.com/drive/folders/1DOcOPZb3-5cWxLqn256AhwUVjBPifhuf?usp=sharing) to 
   - 4 pretrained models of indoor-ds, indoor-ot, outdoor-ds and outdoor-ot (each ~45MB).
 # Finetune
