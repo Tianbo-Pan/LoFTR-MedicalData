@@ -169,6 +169,7 @@ class VideoStreamer:
             raise Exception('Error reading image %s' % impath)
         w, h = grayim.shape[1], grayim.shape[0]
         w_new, h_new = process_resize(w, h, self.resize)
+        print('========== resize imgae ============')
         grayim = cv2.resize(
             grayim, (w_new, h_new), interpolation=self.interp)
         return grayim
@@ -200,7 +201,8 @@ class VideoStreamer:
             w, h = image.shape[1], image.shape[0]
             if self.video_file:
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, self.listing[self.i])
-            if not self.resize:
+            # print('============== is resizing? %s ===============' % (self.resize))
+            if self.resize:
                 w_new, h_new = process_resize(w, h, self.resize)
                 image = cv2.resize(image, (w_new, h_new),
                                    interpolation=self.interp)

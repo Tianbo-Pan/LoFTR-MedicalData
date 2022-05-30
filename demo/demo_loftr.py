@@ -69,7 +69,7 @@ if __name__ == '__main__':
         '--max_length', type=int, default=1000000,
         help='Maximum length if input is a movie or directory')
     parser.add_argument(
-        '--resize', type=int, nargs='+', default=[640, 480],
+        '--resize', type=int, nargs='+', default=-1,
         help='Resize the input image before running inference. If two numbers, '
              'resize to the exact dimensions, if one number, resize the max '
              'dimension, if -1, do not resize')
@@ -175,10 +175,10 @@ if __name__ == '__main__':
     vis_range = [opt.bottom_k, opt.top_k]
 
     while True:
-        if frame_id % 100==0:
-            x = input('请输入（按s暂停  按c继续看后面100帧）：')
-            if x == 's':
-                break
+        # if frame_id % 100==0:
+        #     x = input('press \'s\' to stop and \'c\' to continue: ')
+        #     if x == 's':
+        #         break
         frame_id += 1
         frame, ret = vs.next_frame()
         if frame_id % opt.skip_frames != 0:
@@ -198,6 +198,7 @@ if __name__ == '__main__':
         #frame = img_intensify(frame)
         #frame = frame.cpu().numpy()
         frame_tensor = frame2tensor(frame, device)
+        # print('frame tensor shape = ', frame_tensor.shape)
         last_data = {**last_data, 'image1': frame_tensor}
         #pdb.set_trace()
         matcher(last_data)

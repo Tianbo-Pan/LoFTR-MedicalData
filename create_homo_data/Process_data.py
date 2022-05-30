@@ -7,7 +7,7 @@ import os
 import imageio
 import pdb
 
-train_path = 'C:/Users/PanTianbo/Desktop/croped_image'
+
 
 ### This function is provided by Mez Gebre's repository "deep_homography_estimation"
 #   https://github.com/mez/deep_homography_estimation
@@ -68,18 +68,19 @@ def ImagePreProcessing(image, path):
 
 # save .npy files
 def savedata(path):
-    lst = os.listdir(path + '/')
+    lst = os.listdir(path)
     os.makedirs(path + '_processed/')
     new_path = path + '_processed/'
     #pdb.set_trace()
     for i in lst:
         image, warped_image, H_inverse = ImagePreProcessing(i, path)
-        os.makedirs(path + '_processed/' + '%s' % i[0:12])
-        save_path = path + '_processed/' + '%s' % i[0:12]
+        os.makedirs(path + '_processed/' + '%s' % i.split('.')[0])
+        save_path = path + '_processed/' + '%s' % i.split('.')[0]
         cv2.imwrite(save_path + '/img.png', image)
         cv2.imwrite(save_path + '/warped_img.png', warped_image)
         np.savetxt(save_path + '/gt_homo.txt', H_inverse.reshape(9,1))
 
-
-savedata(train_path)
+if __name__ == '__main__':
+    train_path = 'C:/Users/PanTianbo/Desktop/croped_image'
+    savedata(train_path)
 
