@@ -69,7 +69,7 @@ if __name__ == '__main__':
         '--max_length', type=int, default=1000000,
         help='Maximum length if input is a movie or directory')
     parser.add_argument(
-        '--resize', type=int, nargs='+', default=-1,
+        '--resize', type=int, nargs='+', default=[512,512],
         help='Resize the input image before running inference. If two numbers, '
              'resize to the exact dimensions, if one number, resize the max '
              'dimension, if -1, do not resize')

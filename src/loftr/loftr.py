@@ -43,6 +43,7 @@ class LoFTR(nn.Module):
         })
 
         if data['hw0_i'] == data['hw1_i']:  # faster & better BN convergence
+            # print(torch.cat([data['image0'], data['image1']]).shape)
             feats_c, feats_f = self.backbone(torch.cat([data['image0'], data['image1']], dim=0))
             (feat_c0, feat_c1), (feat_f0, feat_f1) = feats_c.split(data['bs']), feats_f.split(data['bs'])
         else:  # handle different input shapes
