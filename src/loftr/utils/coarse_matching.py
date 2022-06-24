@@ -111,12 +111,12 @@ class CoarseMatching(nn.Module):
 
         if self.match_type == 'dual_softmax':
             sim_matrix = torch.einsum("nlc,nsc->nls", feat_c0,
-                                      feat_c1) / self.temperature
+                                      feat_c1) / self.temperature                               #(Tianbo)sim_matrix的每个元素是由feature沿着 c 这个维度做内积求和得到的。
             if mask_c0 is not None:
                 sim_matrix.masked_fill_(
                     ~(mask_c0[..., None] * mask_c1[:, None]).bool(),
                     -INF)
-            conf_matrix = F.softmax(sim_matrix, 1) * F.softmax(sim_matrix, 2)
+            conf_matrix = F.softmax(sim_matrix, 1) * F.softmax(sim_matrix, 2)                   #(Tianbo)sim_matrix分别对于列和行求softmax得到confa_matrix
 
         elif self.match_type == 'sinkhorn':
             # sinkhorn, dustbin included
@@ -170,13 +170,14 @@ class CoarseMatching(nn.Module):
             'h1c': data['hw1_c'][0],
             'w1c': data['hw1_c'][1]
         }
+
         _device = conf_matrix.device
         # 1. confidence thresholding
-        mask = conf_matrix > self.thr
+        mask = conf_matrix > self.thr                                                           #(Tianbo)首先筛选掉conf_matrix中置信度低于阈值thr的位置,置信度应该是越高越好
         mask = rearrange(mask, 'b (h0c w0c) (h1c w1c) -> b h0c w0c h1c w1c',
                          **axes_lengths)
         if 'mask0' not in data:
-            mask_border(mask, self.border_rm, False)
+            mask_border(mask, self.border_rm, False)    #?
         else:
             mask_border_with_padding(mask, self.border_rm, False,
                                      data['mask0'], data['mask1'])
@@ -186,14 +187,14 @@ class CoarseMatching(nn.Module):
         # 2. mutual nearest
         mask = mask \
             * (conf_matrix == conf_matrix.max(dim=2, keepdim=True)[0]) \
-            * (conf_matrix == conf_matrix.max(dim=1, keepdim=True)[0])
+            * (conf_matrix == conf_matrix.max(dim=1, keepdim=True)[0])                         #(Tianbo)conf_matrix中某个元素必须同时是其所处列和所处行的最大值，才会被保留
 
         # 3. find all valid coarse matches
         # this only works when at most one `True` in each row
-        mask_v, all_j_ids = mask.max(dim=2)
+        mask_v, all_j_ids = mask.max(dim=2)                                                    #(Tianbo)mask是0，1矩阵，每一行，每一列最多只有一个1。mask(1, 4800, 4800)
         b_ids, i_ids = torch.where(mask_v)
-        j_ids = all_j_ids[b_ids, i_ids]
-        mconf = conf_matrix[b_ids, i_ids, j_ids]
+        j_ids = all_j_ids[b_ids, i_ids]                                                        #(Tianbo)这里的i_ids，j_ids中的每个元素是由点坐标(x,y)按照'ids=x+y*w'获得的，所以其range(0,4800)
+        mconf = conf_matrix[b_ids, i_ids, j_ids]                                               #(Tianbo)i_dis，j_ids，mconf的shape都一样，都为N(N是匹配对的数量)
 
         # 4. Random sampling of training samples for fine-level LoFTR
         # (optional) pad samples with gt coarse-level matches
@@ -242,7 +243,7 @@ class CoarseMatching(nn.Module):
         scale = data['hw0_i'][0] / data['hw0_c'][0]
         scale0 = scale * data['scale0'][b_ids] if 'scale0' in data else scale
         scale1 = scale * data['scale1'][b_ids] if 'scale1' in data else scale
-        mkpts0_c = torch.stack(
+        mkpts0_c = torch.stack(                                                                 #(Tianbo)根据匹配对(I,J)，将匹配点从coarse-level网格坐标系通过乘scale(此处为8)映射回原图的网格坐标系
             [i_ids % data['hw0_c'][1], i_ids // data['hw0_c'][1]],
             dim=1) * scale0
         mkpts1_c = torch.stack(

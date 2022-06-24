@@ -40,18 +40,18 @@ class FineMatching(nn.Module):
             })
             return
 
-        feat_f0_picked = feat_f0_picked = feat_f0[:, WW//2, :]
+        feat_f0_picked = feat_f0_picked = feat_f0[:, WW//2, :]                                                                          #(Tianbo)取i窗口中心点的特征向量，用于跟j窗口中所有特征向量做匹配
         sim_matrix = torch.einsum('mc,mrc->mr', feat_f0_picked, feat_f1)
         softmax_temp = 1. / C**.5
         heatmap = torch.softmax(softmax_temp * sim_matrix, dim=1).view(-1, W, W)
 
         # compute coordinates from heatmap
-        coords_normalized = dsnt.spatial_expectation2d(heatmap[None], True)[0]  # [M, 2]
+        coords_normalized = dsnt.spatial_expectation2d(heatmap[None], True)[0]  # [M, 2]                                                #(Tianbo)利用heatmap计算expectation，heatmap(N,5,5)→expectation(N,2)
         grid_normalized = create_meshgrid(W, W, True, heatmap.device).reshape(1, -1, 2)  # [1, WW, 2]
 
         # compute std over <x, y>
         var = torch.sum(grid_normalized**2 * heatmap.view(-1, WW, 1), dim=1) - coords_normalized**2  # [M, 2]
-        std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)), -1)  # [M]  clamp needed for numerical stability
+        std = torch.sum(torch.sqrt(torch.clamp(var, min=1e-10)), -1)  # [M]  clamp needed for numerical stability                       #(Tianbo)通过计算expectation的标准差来表示expectation的可信度，标准差越大可信度越低，在loss里的贡献越小
         
         # for fine-level supervision
         data.update({'expec_f': torch.cat([coords_normalized, std.unsqueeze(1)], -1)})
@@ -66,7 +66,7 @@ class FineMatching(nn.Module):
         # mkpts0_f and mkpts1_f
         mkpts0_f = data['mkpts0_c']
         scale1 = scale * data['scale1'][data['b_ids']] if 'scale0' in data else scale
-        mkpts1_f = data['mkpts1_c'] + (coords_normed * (W // 2) * scale1)[:len(data['mconf'])]
+        mkpts1_f = data['mkpts1_c'] + (coords_normed * (W // 2) * scale1)[:len(data['mconf'])]                                          #在img1中找到img0点i的亚坐标匹配点j'，j'=j+expectaion
 
         data.update({
             "mkpts0_f": mkpts0_f,

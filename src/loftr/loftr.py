@@ -45,7 +45,7 @@ class LoFTR(nn.Module):
         if data['hw0_i'] == data['hw1_i']:  # faster & better BN convergence
             # print(torch.cat([data['image0'], data['image1']]).shape)
             feats_c, feats_f = self.backbone(torch.cat([data['image0'], data['image1']], dim=0))
-            (feat_c0, feat_c1), (feat_f0, feat_f1) = feats_c.split(data['bs']), feats_f.split(data['bs'])
+            (feat_c0, feat_c1), (feat_f0, feat_f1) = feats_c.split(data['bs']), feats_f.split(data['bs'])                           #(Tianbo)特征提取,feat_c(1,256,H/8,W/8),feat_f(1,128,H/2,W/2)
         else:  # handle different input shapes
             (feat_c0, feat_f0), (feat_c1, feat_f1) = self.backbone(data['image0']), self.backbone(data['image1'])
 
@@ -61,19 +61,25 @@ class LoFTR(nn.Module):
 
         mask_c0 = mask_c1 = None  # mask is useful in training
         if 'mask0' in data:
-            mask_c0, mask_c1 = data['mask0'].flatten(-2), data['mask1'].flatten(-2)
-        feat_c0, feat_c1 = self.loftr_coarse(feat_c0, feat_c1, mask_c0, mask_c1)
+            mask_c0 = data['mask0'][None]
+            mask_c0 =nn.functional.interpolate(mask_c0,scale_factor=1/8)[0].bool()
+            mask_c1 = data['mask1'][None]
+            mask_c1 =nn.functional.interpolate(mask_c1,scale_factor=1/8)[0].bool()
+            mask_c0, mask_c1 = mask_c0.flatten(-2), mask_c1.flatten(-2)
+            
+        feat_c0, feat_c1 = self.loftr_coarse(feat_c0, feat_c1, mask_c0, mask_c1)                                                    #(Tianbo)Transformer都是attention层，self-attention & cross-attention
 
         # 3. match coarse-level
-        self.coarse_matching(feat_c0, feat_c1, data, mask_c0=mask_c0, mask_c1=mask_c1)
-
+        self.coarse_matching(feat_c0, feat_c1, data, mask_c0=mask_c0, mask_c1=mask_c1)                                              #(Tianbo)在原图1/8大小的coarse-level进行粗匹配，输出匹配对的集合mkpts0_c(N,2),mkpts1_c。同时也输出匹配对对应的置信置信度mconf(N,1)，其中mconf越高表示置信度越高
+        number = torch.nonzero(data['conf_matrix'])
+        a = len(number)
         # 4. fine-level refinement
-        feat_f0_unfold, feat_f1_unfold = self.fine_preprocess(feat_f0, feat_f1, feat_c0, feat_c1, data)
+        feat_f0_unfold, feat_f1_unfold = self.fine_preprocess(feat_f0, feat_f1, feat_c0, feat_c1, data)                             #(Tianbo)对于匹配对(I,J)，在fine-level中以每个i为中心截取5×5窗口，得到feat_f0_unfold(N,25,128)。以j为中心得到feat_f1_unfold
         if feat_f0_unfold.size(0) != 0:  # at least one coarse level predicted
-            feat_f0_unfold, feat_f1_unfold = self.loftr_fine(feat_f0_unfold, feat_f1_unfold)
+            feat_f0_unfold, feat_f1_unfold = self.loftr_fine(feat_f0_unfold, feat_f1_unfold)                                        #(Tianbo)Transformer都是attention层，self-attention & cross-attention
 
         # 5. match fine-level
-        self.fine_matching(feat_f0_unfold, feat_f1_unfold, data)
+        self.fine_matching(feat_f0_unfold, feat_f1_unfold, data)                                                                    #(Tianbo)计算expectation，用于refine粗匹配输出的匹配点，j点(grid坐标)→j'点(亚坐标)。最终输出i→j'
 
     def load_state_dict(self, state_dict, *args, **kwargs):
         for k in list(state_dict.keys()):
